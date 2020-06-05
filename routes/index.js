@@ -1,10 +1,11 @@
 const express = require('express');
 
 const router = express.Router();
+require('dotenv/config');
 
 // Routes
 router.get('/', (req, res) => {
-    res.send("Test");
+    res.render('index', { title: "Hate Speech Twitter Stream", api: process.env.GOOGLE_MAP_API_KEY });
 });
 
 

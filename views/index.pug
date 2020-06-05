@@ -1,0 +1,23 @@
+extends layout
+
+block content
+
+  nav.navbar.is-primary(role='navigation' aria-label='main navigation')
+    .container
+      .navbar-brand
+        a.navbar-item Hate Speech Twitter Stream
+  .container.is-fluid
+    .notification
+      #map
+  footer.footer
+    .container
+      .content.has-text-centered
+        p
+          strong Hate Speech Detector Org
+          |  by 
+          a H
+          | .
+
+  script(src='https://maps.googleapis.com/maps/api/js?key=' + api + '&callback=initMap', async='', defer='')
+  script(src='/js/main.js', async='', defer='')
+  script
