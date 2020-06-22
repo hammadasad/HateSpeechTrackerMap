@@ -1,9 +1,20 @@
 const express = require('express');
 const app = express();
 var Twit = require('twit');
+const LanguageDetect = require('languagedetect');
 var cors = require('cors');
+let nodeGeocoder = require('node-geocoder');
+
+const lngDetector = new LanguageDetect();
 
 require('dotenv/config');
+
+let options = {
+  provider: 'mapquest',
+  apiKey : process.env.MAP_QUEST_CONSUMER_KEY
+};
+ 
+let geoCoder = nodeGeocoder(options);
 
 app.use(cors());
 
@@ -29,11 +40,44 @@ var T = new Twit({
     strictSSL:            true,     // optional - requires SSL certificates to be valid.
   })
 
+allTweets = [];
+
+var stream = T.stream('statuses/filter', { track: '#blm,#racism,#blacklivesmatter', language: 'en', locations :'-180,-90,180,90'})
+
 io.on('connection', function(socket) {
-    var stream = T.stream('statuses/filter', { track: 'blm' })
- 
+    i = 0;
     stream.on('tweet', function (tweet) {
-        console.log("sending tweet");
-        io.emit('tweet',{ 'tweet': tweet });
+        //console.log("sending tweet");
+        if(i > 40) {
+            stream.stop();
+            process.nextTick(() => stream.stop()); 
+            console.log("Disconnecting Twitter Stream");
+            for(var tweetIndex in allTweets) {
+                io.sockets.emit("tweet", allTweets[tweetIndex]);
+            }
+            socket.disconnect(0);    
+        } else {
+            if(tweet.place != null) {
+                geoCoder.geocode(tweet.place.full_name)
+                .then((res)=> {
+                  //console.log(res);
+                  //tweet.place['geo'] = res;
+                  var convertedTweet = {};
+                  convertedTweet['lat'] = res[0]['latitude'];
+                  convertedTweet['long'] = res[0]['longitude'];
+                  convertedTweet['tweet'] = tweet.text;
+                  allTweets.push(convertedTweet);
+                  //console.log(convertedTweet); 
+                  //io.emit('tweet',{ 'tweet': tweet });
+                  i++;
+                })
+                .catch((err)=> {
+                  //console.log("There was an error " + err);
+                });             
+            }
+        }
     })
+    stream.on("ping", () => console.log("ping"))
+    stream.on("error", error => console.log("error", error))
+    stream.on("end", response => console.log("end"));
 });
