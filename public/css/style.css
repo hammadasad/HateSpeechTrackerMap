@@ -3,3 +3,27 @@
     margin: 0;
     padding: 0;
 }
+
+#menu
+{
+  position:absolute;
+  top:0px;
+  right:0px;
+  height:100%;
+  width:25%;
+  background-color:rgba(0,0,0, 0.7);
+  z-index: 100;
+  position: fixed;
+  overflow:auto;
+  overflow-x: hidden;
+}
+
+.stream {
+    padding:0px;
+    height:100%;
+    width:100%;
+}
+
+.tweet {
+    color:white;
+}

@@ -7,14 +7,17 @@ socket.on('connect',function(data){
 
 var i = 0;
 socket.on('tweet', function (tweet) {
-  console.log(tweet.tweet);
+  console.log(tweet);
   if(i > 50) {
     socket.close();
   }
   
   //console.log(tweet);
   var uluru = {lat: tweet['lat'], lng: tweet['long']};
-  var marker = new google.maps.Marker({position: uluru, map: map});
+  var marker = new google.maps.Marker({
+    position: uluru, 
+    map: map,
+    animation: google.maps.Animation.DROP });
 
   var contentString = '<div id="content">'+
   '<div id="siteNotice">'+
@@ -29,9 +32,19 @@ socket.on('tweet', function (tweet) {
     content: contentString.replace('placeholder', tweet['tweet'])
   });
 
+  var HTMLtext =  '<p class="col-xs-10 col-xs-offset-2 text tweet">' + tweet['tweet'] + '</p>'
+  var tweetBox = '<div id="' + tweet.id + '" class="tile is-vertical" style="border:1px solid white;">' + HTMLtext + '</div>';
+
+  $(".stream").prepend(tweetBox);
+
+  $("#" + tweet.id).click(function() {
+    google.maps.event.trigger(marker, 'click');
+  });
+
   marker.addListener('click', function() {
     infowindow.open(map, marker);
   });
+  
   i++;
 });
 

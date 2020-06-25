@@ -46,13 +46,15 @@ var stream = T.stream('statuses/filter', { track: 'blm,racism,blacklivesmatter,a
 
 io.on('connection', function(socket) {
     stream.on('tweet', function (tweet) {
+            //console.log(tweet);
             if(tweet.place != null) {
                 geoCoder.geocode(tweet.place.full_name)
                 .then((res)=> {
                   var convertedTweet = {};
+                  convertedTweet['id'] = tweet.id;
                   convertedTweet['lat'] = res[0]['latitude'];
                   convertedTweet['long'] = res[0]['longitude'];
-                  convertedTweet['tweet'] = tweet.text;
+                  convertedTweet['tweet'] = tweet.extended_tweet['full_text'];
                   io.sockets.emit("tweet", convertedTweet);
                 })
                 .catch((err)=> {
