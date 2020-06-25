@@ -42,42 +42,22 @@ var T = new Twit({
 
 allTweets = [];
 
-var stream = T.stream('statuses/filter', { track: '#blm,#racism,#blacklivesmatter', language: 'en', locations :'-180,-90,180,90'})
+var stream = T.stream('statuses/filter', { track: 'blm,racism,blacklivesmatter,alllivesmatter', language: 'en'})
 
 io.on('connection', function(socket) {
-    i = 0;
     stream.on('tweet', function (tweet) {
-        //console.log("sending tweet");
-        if(i > 40) {
-            stream.stop();
-            process.nextTick(() => stream.stop()); 
-            console.log("Disconnecting Twitter Stream");
-            for(var tweetIndex in allTweets) {
-                io.sockets.emit("tweet", allTweets[tweetIndex]);
-            }
-            socket.disconnect(0);    
-        } else {
             if(tweet.place != null) {
                 geoCoder.geocode(tweet.place.full_name)
                 .then((res)=> {
-                  //console.log(res);
-                  //tweet.place['geo'] = res;
                   var convertedTweet = {};
                   convertedTweet['lat'] = res[0]['latitude'];
                   convertedTweet['long'] = res[0]['longitude'];
                   convertedTweet['tweet'] = tweet.text;
-                  allTweets.push(convertedTweet);
-                  //console.log(convertedTweet); 
-                  //io.emit('tweet',{ 'tweet': tweet });
-                  i++;
+                  io.sockets.emit("tweet", convertedTweet);
                 })
                 .catch((err)=> {
-                  //console.log("There was an error " + err);
                 });             
             }
-        }
-    })
-    stream.on("ping", () => console.log("ping"))
-    stream.on("error", error => console.log("error", error))
-    stream.on("end", response => console.log("end"));
+        });
 });
+
