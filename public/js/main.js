@@ -8,7 +8,7 @@ socket.on('connect',function(data){
 var i = 0;
 socket.on('tweet', function (tweet) {
   console.log(tweet);
-  if(i > 50) {
+  if(i > 15) {
     socket.close();
   }
   

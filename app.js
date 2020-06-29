@@ -4,7 +4,10 @@ var Twit = require('twit');
 const LanguageDetect = require('languagedetect');
 var cors = require('cors');
 let nodeGeocoder = require('node-geocoder');
-
+var PythonShell = require('python-shell');
+const { spawn } = require('child_process');
+var fs = require('fs');
+var path = require('path');
 const lngDetector = new LanguageDetect();
 
 require('dotenv/config');
@@ -40,7 +43,7 @@ var T = new Twit({
     strictSSL:            true,     // optional - requires SSL certificates to be valid.
   })
 
-allTweets = [];
+  var jsonPath = path.join(__dirname, 'scripts', 'classifier.py');
 
 var stream = T.stream('statuses/filter', { track: 'blm,racism,blacklivesmatter,alllivesmatter', language: 'en'})
 
@@ -50,12 +53,18 @@ io.on('connection', function(socket) {
             if(tweet.place != null) {
                 geoCoder.geocode(tweet.place.full_name)
                 .then((res)=> {
-                  var convertedTweet = {};
-                  convertedTweet['id'] = tweet.id;
-                  convertedTweet['lat'] = res[0]['latitude'];
-                  convertedTweet['long'] = res[0]['longitude'];
-                  convertedTweet['tweet'] = tweet.extended_tweet['full_text'];
-                  io.sockets.emit("tweet", convertedTweet);
+                  const pyProg = spawn('python3', [jsonPath, tweet.extended_tweet['full_text']]); 
+                  pyProg.stdout.on('data', function(data) {
+                    console.log(data.toString());
+                    console.log("here");
+                    var convertedTweet = {};
+                    convertedTweet['id'] = tweet.id;
+                    convertedTweet['lat'] = res[0]['latitude'];
+                    convertedTweet['long'] = res[0]['longitude'];
+                    convertedTweet['tweet'] = tweet.extended_tweet['full_text'];
+                    convertedTweet['classification'] = data;
+                    io.sockets.emit("tweet", convertedTweet);
+                  });                   
                 })
                 .catch((err)=> {
                 });             
