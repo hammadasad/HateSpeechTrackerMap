@@ -2,26 +2,18 @@ extends layout
 
 block content
 
-  nav.navbar.is-primary(role='navigation' aria-label='main navigation')
+  nav.navbar.is-dark(role='navigation' aria-label='main navigation')
     .container
       .navbar-brand
         a.navbar-item Hate Speech Twitter Stream
   .container.is-fluid
-    .notification
+    .notification(style='background-color:#363636')
       #map
 
       #menu(style="display:block")
         .container(style="width:100%;")
           hr(style="margin-top:0px;margin-bottom:10px;")
-          .stream.col-xs-12.container     
-  footer.footer
-    .container
-      .content.has-text-centered
-        p
-          strong Hate Speech Detector Org
-          |  by 
-          a H
-          | .
+          .stream.col-xs-12.container
 
   script(src='https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js')
   script(src='https://maps.googleapis.com/maps/api/js?key=' + api + '&callback=initMap', async='', defer='')

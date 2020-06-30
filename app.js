@@ -34,6 +34,8 @@ var io = require('socket.io').listen(server);
 io.set('origins', '*:*');
 app.options('*', cors());
 
+var tweetIdMap = new Map();
+
 var T = new Twit({
     consumer_key:         process.env.TWITTER_API_KEY,
     consumer_secret:      process.env.TWITTER_API_SECRET_KEY,
@@ -50,24 +52,41 @@ var stream = T.stream('statuses/filter', { track: 'blm,racism,blacklivesmatter,a
 io.on('connection', function(socket) {
     stream.on('tweet', function (tweet) {
             //console.log(tweet);
-            if(tweet.place != null) {
-                geoCoder.geocode(tweet.place.full_name)
-                .then((res)=> {
-                  const pyProg = spawn('python3', [jsonPath, tweet.extended_tweet['full_text']]); 
-                  pyProg.stdout.on('data', function(data) {
-                    console.log(data.toString());
+            if(!(tweetIdMap.has(tweet.id))) {
+                if(tweet.place != null ){//| tweet['user']['location'] != null) {
                     console.log("here");
-                    var convertedTweet = {};
-                    convertedTweet['id'] = tweet.id;
-                    convertedTweet['lat'] = res[0]['latitude'];
-                    convertedTweet['long'] = res[0]['longitude'];
-                    convertedTweet['tweet'] = tweet.extended_tweet['full_text'];
-                    convertedTweet['classification'] = data;
-                    io.sockets.emit("tweet", convertedTweet);
-                  });                   
-                })
-                .catch((err)=> {
-                });             
+                    // var location = '';
+                    // if(tweet.place == null) {
+                    //     location = tweet['user']['location'];
+                    // } else {
+                    //     location = tweet.place.full_name;
+                    // }
+                    console.log(tweet.place.full_name);
+                    geoCoder.geocode(tweet.place.full_name)
+                    .then((res)=> {
+                      var inputText = tweet.extended_tweet['full-text'].replace(/\b@\S+/ig,"");
+                      inputText = inputText.replace(/#/g, "");
+                      inputText = inputText.replace(/a/g, "");
+                      inputText = inputText.replace(/the/g, "");
+                      console.log(inputText);
+                      const pyProg = spawn('python3', [jsonPath, tweet.extended_tweet['full_text']]); 
+                      pyProg.stdout.on('data', function(data) {
+                        var convertedTweet = {};
+                        convertedTweet['id'] = tweet.id;
+                        convertedTweet['lat'] = res[0]['latitude'];
+                        convertedTweet['long'] = res[0]['longitude'];
+                        convertedTweet['tweet'] = tweet.extended_tweet['full_text'];
+                        data = data.toString().replace(/'/g,'"');
+                        var classificationDataToJson = JSON.parse(data);
+                        convertedTweet['classification'] = classificationDataToJson;
+                        tweetIdMap.set(tweet.id, true);
+                        io.sockets.emit("tweet", convertedTweet);
+                      });                   
+                    })
+                    .catch((err)=> {
+                        console.log("ERROR CAUGHT");
+                    });             
+                }
             }
         });
 });
