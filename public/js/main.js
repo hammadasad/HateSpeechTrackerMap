@@ -5,6 +5,8 @@ socket.on('connect',function(data){
   console.log('connected');
 });
 
+var tweetMap = {};
+
 var i = 0;
 socket.on('tweet', function (tweet) {
   console.log(tweet);
@@ -12,86 +14,89 @@ socket.on('tweet', function (tweet) {
     socket.close();
   }
   
-  //console.log(tweet);
-  var uluru = {lat: tweet['lat'], lng: tweet['long']};
+  if(!(tweet['id'] in tweetMap)) {
+    //console.log(tweet);
+    var uluru = {lat: tweet['lat'], lng: tweet['long']};
 
-  var hateSpeechPercentage = tweet['classification'][0]['confidence'];
-  var offensiveLanguagePercentage = tweet['classification'][1]['confidence'];
-  var neitherPercentage = tweet['classification'][2]['confidence'];
+    var hateSpeechPercentage = tweet['classification'][0]['confidence'];
+    var offensiveLanguagePercentage = tweet['classification'][1]['confidence'];
+    var neitherPercentage = tweet['classification'][2]['confidence'];
 
-  var marker = new google.maps.Marker({
-    position: uluru, 
-    map: map,
-    animation: google.maps.Animation.DROP });
+    var marker = new google.maps.Marker({
+      position: uluru, 
+      map: map,
+      animation: google.maps.Animation.DROP });
 
-  var contentString = '<div id="content">'+
-  '<div id="siteNotice">'+
-  '</div>'+
-  //'<h1 id="firstHeading" class="firstHeading">Uluru</h1>'+
-  '<div id="bodyContent">'+
-  '<p>{placeholder}</p>'+ '<br>'
-  '<p>Hate Speech: ' + hateSpeechPercentage + '</p>'+
-  '<p>Offensive Language: ' + offensiveLanguagePercentage + '</p>'+
-  '<p>Neither: ' + neitherPercentage + '</p>'+
-  '</div>'+
+    var contentString = '<div id="content">'+
+    '<div id="siteNotice">'+
+    '</div>'+
+    //'<h1 id="firstHeading" class="firstHeading">Uluru</h1>'+
+    '<div id="bodyContent">'+
+    '<p>{placeholder}</p>'+ '<br>'
+    '<p>Hate Speech: ' + hateSpeechPercentage + '</p>'+
+    '<p>Offensive Language: ' + offensiveLanguagePercentage + '</p>'+
+    '<p>Neither: ' + neitherPercentage + '</p>'+
+    '</div>'+
+    '</div>';
+
+    var tweetClassification;
+    var cardColor;
+
+    if(hateSpeechPercentage > offensiveLanguagePercentage && hateSpeechPercentage > neitherPercentage) {
+      tweetClassification = "Hate Speech";
+      color = '#ef476f';
+    } else if(offensiveLanguagePercentage > hateSpeechPercentage && offensiveLanguagePercentage > neitherPercentage) {
+      tweetClassification = "Offensive Language";
+      color = '#ffd166';
+    } else {
+      tweetClassification = "Neither";
+      color = '#06d6a0';
+    }
+
+    var infowindow = new google.maps.InfoWindow({
+      content: contentString.replace('placeholder', tweet['tweet'])
+    });
+
+    var HTMLtext =  '<p>' + tweet['tweet'] + '</p>' +
+                    '<ul>' + 
+                    '<li>Hate Speech: ' + hateSpeechPercentage + '</li>'+
+                    '<li>Offensive Language: ' + offensiveLanguagePercentage + '</li>'+
+                    '<li>Neither: ' + neitherPercentage + '</li>' + 
+                    '</ul>';
+
+    var tweetBox = 		'<div id="' + tweet.id+ '" class="card" style="background-color: ' +  color + ';">' + 
+    '<header class="card-header">' +
+      '<p class="card-header-title">' +
+        tweetClassification +
+      '</p>' +
+      '<a href="#" class="card-header-icon" aria-label="more options">' +
+    '<span class="icon">' +
+      '<i class="fas fa-angle-down" aria-hidden="true"></i>' + 
+    '</span>' +
+  '</a>' +
+    '</header>' +
+    '<div class="card-content">' + 
+      '<div class="content">' +
+        HTMLtext +
+      '</div>' + 
+    '</div>' +
   '</div>';
+                    
+    //var tweetBox = '<div id="' + tweet.id + '" class="tile is-vertical" style="border:1px solid white;">' + HTMLtext + '</div>';
 
-  var tweetClassification;
-  var cardColor;
+    $(".stream").prepend(tweetBox);
 
-  if(hateSpeechPercentage > offensiveLanguagePercentage && hateSpeechPercentage > neitherPercentage) {
-    tweetClassification = "Hate Speech";
-    color = '#ef476f';
-  } else if(offensiveLanguagePercentage > hateSpeechPercentage && offensiveLanguagePercentage > neitherPercentage) {
-    tweetClassification = "Offensive Language";
-    color = '#ffd166';
-  } else {
-    tweetClassification = "Neither";
-    color = '#06d6a0';
+    $("#" + tweet.id).click(function() {
+      google.maps.event.trigger(marker, 'click');
+    });
+
+    marker.addListener('click', function() {
+      infowindow.open(map, marker);
+    });
+    
+    i++;
+    tweetMap[tweet['id']] = 0;
   }
-
-  var infowindow = new google.maps.InfoWindow({
-    content: contentString.replace('placeholder', tweet['tweet'])
-  });
-
-  var HTMLtext =  '<p>' + tweet['tweet'] + '</p>' +
-                  '<ul>' + 
-                  '<li>Hate Speech: ' + hateSpeechPercentage + '</li>'+
-                  '<li>Offensive Language: ' + offensiveLanguagePercentage + '</li>'+
-                  '<li>Neither: ' + neitherPercentage + '</li>' + 
-                  '</ul>';
-
-  var tweetBox = 		'<div id="' + tweet.id+ '" class="card" style="background-color: ' +  color + ';">' + 
-  '<header class="card-header">' +
-    '<p class="card-header-title">' +
-      tweetClassification +
-    '</p>' +
-    '<a href="#" class="card-header-icon" aria-label="more options">' +
-  '<span class="icon">' +
-    '<i class="fas fa-angle-down" aria-hidden="true"></i>' + 
-  '</span>' +
-'</a>' +
-  '</header>' +
-  '<div class="card-content">' + 
-    '<div class="content">' +
-      HTMLtext +
-    '</div>' + 
-  '</div>' +
-'</div>';
-                  
-  //var tweetBox = '<div id="' + tweet.id + '" class="tile is-vertical" style="border:1px solid white;">' + HTMLtext + '</div>';
-
-  $(".stream").prepend(tweetBox);
-
-  $("#" + tweet.id).click(function() {
-    google.maps.event.trigger(marker, 'click');
-  });
-
-  marker.addListener('click', function() {
-    infowindow.open(map, marker);
-  });
-  
-  i++;
 });
 
 window.initMap = function() {

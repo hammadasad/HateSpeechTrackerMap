@@ -50,32 +50,32 @@ var T = new Twit({
 var stream = T.stream('statuses/filter', { track: 'blm,racism,blacklivesmatter,alllivesmatter', language: 'en'})
 
 io.on('connection', function(socket) {
+
     stream.on('tweet', function (tweet) {
             //console.log(tweet);
             if(!(tweetIdMap.has(tweet.id))) {
-                if(tweet.place != null ){//| tweet['user']['location'] != null) {
-                    console.log("here");
-                    // var location = '';
-                    // if(tweet.place == null) {
-                    //     location = tweet['user']['location'];
-                    // } else {
-                    //     location = tweet.place.full_name;
-                    // }
-                    console.log(tweet.place.full_name);
+                if(tweet.place != null && !(typeof tweet.text === 'undefined')){//| tweet['user']['location'] != null) {
                     geoCoder.geocode(tweet.place.full_name)
                     .then((res)=> {
-                      var inputText = tweet.extended_tweet['full-text'].replace(/\b@\S+/ig,"");
-                      inputText = inputText.replace(/#/g, "");
-                      inputText = inputText.replace(/a/g, "");
-                      inputText = inputText.replace(/the/g, "");
-                      console.log(inputText);
-                      const pyProg = spawn('python3', [jsonPath, tweet.extended_tweet['full_text']]); 
+                      if(!tweet['extended_tweet']) {
+                        inputText = tweet['text'];
+                      } else {
+                        inputText = tweet['extended_tweet']['full-text'];
+                      }
+
+                      console.log("vallue of inputText is : " + inputText);
+                      //inputText = inputText.replace(/\b@\S+/ig,"");
+                      //inputText = inputText.replace(/#/g, "");
+                      //inputText = inputText.replace(/a/g, "");
+                      //inputText = inputText.replace(/the/g, "");
+                      //console.log(inputText);
+                      const pyProg = spawn('python3', [jsonPath, inputText]); 
                       pyProg.stdout.on('data', function(data) {
                         var convertedTweet = {};
                         convertedTweet['id'] = tweet.id;
                         convertedTweet['lat'] = res[0]['latitude'];
                         convertedTweet['long'] = res[0]['longitude'];
-                        convertedTweet['tweet'] = tweet.extended_tweet['full_text'];
+                        convertedTweet['tweet'] = inputText;
                         data = data.toString().replace(/'/g,'"');
                         var classificationDataToJson = JSON.parse(data);
                         convertedTweet['classification'] = classificationDataToJson;
@@ -85,6 +85,7 @@ io.on('connection', function(socket) {
                     })
                     .catch((err)=> {
                         console.log("ERROR CAUGHT");
+                        console.log(err);
                     });             
                 }
             }
