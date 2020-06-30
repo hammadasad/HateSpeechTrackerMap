@@ -28,7 +28,7 @@ const routes = require('./routes/index');
 
 app.use('/', routes);
 
-var server = app.listen(3000);
+var server = app.listen(process.env.PORT || 5000)
 
 var io = require('socket.io').listen(server);
 io.set('origins', '*:*');
