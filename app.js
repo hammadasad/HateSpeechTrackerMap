@@ -69,7 +69,7 @@ io.on('connection', function(socket) {
                       //inputText = inputText.replace(/a/g, "");
                       //inputText = inputText.replace(/the/g, "");
                       //console.log(inputText);
-                      const pyProg = spawn('python3', [jsonPath, inputText]); 
+                      const pyProg = spawn('python', [jsonPath, inputText]); 
                       pyProg.stdout.on('data', function(data) {
                         var convertedTweet = {};
                         convertedTweet['id'] = tweet.id;
